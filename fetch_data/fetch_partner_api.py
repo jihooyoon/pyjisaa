@@ -136,17 +136,19 @@ if __name__ == "__main__":
         os.makedirs("output", exist_ok=True)
         
         # Convert JSON response to SQLite
-        flattened_result = pandas.json_normalize(result_json['data']['app']['events']['edges'])
+        events = [edge['node'] for edge in result_json['data']['app']['events']['edges']]
+        flattened_result = pandas.json_normalize(events)
         conn = sqlite3.connect('output/events_data.db')
         flattened_result.to_sql('events', conn, if_exists='replace', index=False)
         print("Data saved to output/events_data.db")
-        exit(0)
 
         # Write JSON response to JSON file
         with open("output/events_data.json", "w", encoding="utf-16") as f:
             json.dump(result_json, f, indent=2)
             print("Data saved to output/events_data.json")     
-
-        print("Failed to write data.")   
+        
+        exit(0)
+        print("Failed to write data.")
+        exit(2)   
     print("Failed to fetch events data.")
     exit(1)
