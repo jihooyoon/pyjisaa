@@ -1,8 +1,8 @@
 import os
-from graphql import print_ast
-import requests
-from dotenv import load_dotenv
+import json, pandas, sqlite3, requests
 from gql import gql
+from graphql import print_ast
+from dotenv import load_dotenv
 
 is_dev = False
 
@@ -116,6 +116,7 @@ def fetch_events(first_n=10):
         """)
     
     query_str = print_ast(graphql_query.document)
+    
     response = requests.post(api_url, json={"query": query_str, "variables": variables}, headers=headers)
 
     if response.status_code == 200:
@@ -133,11 +134,18 @@ if __name__ == "__main__":
     result_json = fetch_events(50)
     if result_json is not None:
         os.makedirs("output", exist_ok=True)
+        
+        # Convert JSON response to SQLite
+        flattened_result = pandas.json_normalize(result_json['data']['app']['events']['edges'])
+        conn = sqlite3.connect('output/events_data.db')
+        flattened_result.to_sql('events', conn, if_exists='replace', index=False)
+        print("Data saved to output/events_data.db")
+        exit(0)
+
+        # Write JSON response to JSON file
         with open("output/events_data.json", "w", encoding="utf-16") as f:
-            import json
             json.dump(result_json, f, indent=2)
-            print("Data saved to output/events_data.json")
-            exit(0)
+            print("Data saved to output/events_data.json")     
 
         print("Failed to write data.")   
     print("Failed to fetch events data.")
