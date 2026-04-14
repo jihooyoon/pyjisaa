@@ -143,6 +143,7 @@ output/
 
 # MacOS Trash
 .DS_Store
+**/.DS_Store
 
 # Environments
 .env
