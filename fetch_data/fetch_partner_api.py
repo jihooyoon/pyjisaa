@@ -6,13 +6,24 @@ from gql import gql
 
 is_dev = False
 
+def getenv_w_log(key):
+    value = os.getenv(key)
+    if value is None:
+        print(f"Error: {key} is not set in the environment variables.")
+    return value
+
 def fetch_events(first_n=10):
     if is_dev:
-        load_dotenv()
-    org_id = os.getenv("SHOPIFY_PARTNER_ORG_ID")
-    app_id = os.getenv("SHOPIFY_PARTNER_APP_ID")
-    api_ver = os.getenv("SHOPIFY_PARTNER_API_VER")
-    access_token = os.getenv("SHOPIFY_PARTNER_API_TOKEN")
+        print(load_dotenv())
+
+    org_id = getenv_w_log("SHOPIFY_PARTNER_ORG_ID")
+    app_id = getenv_w_log("SHOPIFY_PARTNER_APP_ID")
+    api_ver = getenv_w_log("SHOPIFY_PARTNER_API_VER")
+    access_token = getenv_w_log("SHOPIFY_PARTNER_API_TOKEN")
+
+    if not all([org_id, app_id, api_ver, access_token]):
+        print("Error: Missing required environment variable(s)")
+        return None
 
     global_app_id = f"gid://partners/App/{app_id}"
     api_url = f"https://partners.shopify.com/{org_id}/api/{api_ver}/graphql.json"
@@ -129,4 +140,5 @@ if __name__ == "__main__":
             exit(0)
 
         print("Failed to write data.")   
+    print("Failed to fetch events data.")
     exit(1)
