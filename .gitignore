@@ -141,6 +141,9 @@ drafts/
 # Output
 output/
 
+# MacOS Trash
+.DS_Store
+
 # Environments
 .env
 .envrc
