@@ -6,9 +6,11 @@ Ported from jisrot/src/app_egui.rs.
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 from PySide6.QtCore import QSettings
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -98,6 +100,7 @@ class MainWindow(QWidget):
         row2.addWidget(self.btn_file_picker)
 
         self.btn_analyze = QPushButton(ui.BTN_ANALYZE_LBL)
+        self.btn_analyze.setEnabled(False)
         self.btn_analyze.clicked.connect(self._on_analyze)
         row2.addWidget(self.btn_analyze)
 
@@ -239,6 +242,7 @@ class MainWindow(QWidget):
             names = ", ".join(Path(f).name for f in files)
             self.lbl_event_files.setText(names)
             self.lbl_event_files.setVisible(True)
+            self.btn_analyze.setEnabled(True)
             self._save_state()
 
     def _on_analyze(self) -> None:
@@ -278,9 +282,6 @@ class MainWindow(QWidget):
                    self.selected_excluding_defs_option["value"])
         s.setValue("excluding_defs_file",
                    str(self.excluding_defs_file) if self.excluding_defs_file else "")
-        if self.event_history_file_list:
-            s.setValue("event_history_files",
-                       json.dumps([str(p) for p in self.event_history_file_list]))
 
     def _load_state(self) -> None:
         """Load persisted values into instance variables (no widget access)."""
@@ -312,13 +313,6 @@ class MainWindow(QWidget):
         ef = s.value("excluding_defs_file", "")
         self.excluding_defs_file = Path(ef) if ef else None
 
-        fj = s.value("event_history_files", "")
-        if fj:
-            try:
-                self.event_history_file_list = [Path(p) for p in json.loads(fj)]
-            except (json.JSONDecodeError, TypeError):
-                pass
-
     def _apply_loaded_state(self) -> None:
         """Apply loaded values to widgets (called after _build_ui)."""
         if self.pricing_defs_file:
@@ -326,26 +320,25 @@ class MainWindow(QWidget):
         if self.excluding_defs_file:
             self.lbl_excluding_file.setText(self.excluding_defs_file.name)
         self._sync_help_labels()
-        if self.event_history_file_list:
-            names = ", ".join(p.name for p in self.event_history_file_list)
-            self.lbl_event_files.setText(names)
-            self.lbl_event_files.setVisible(True)
 
     def closeEvent(self, event) -> None:
         self._save_state()
         super().closeEvent(event)
 
 
-def run(reset_default: bool = False) -> None:
-    import sys
+def _get_icon_path() -> Path:
+    if getattr(sys, 'frozen', False):
+        return Path(sys._MEIPASS) / "ass" / "icon" / "icon256.png"
+    return Path(__file__).parent / "ass" / "icon" / "icon256.png"
 
+
+def run(reset_default: bool = False) -> None:
     app = QApplication(sys.argv)
     app.setApplicationName("Jisrot")
     app.setOrganizationName("pyjisaa")
 
-    icon_path = Path(__file__).parent / "ass" / "icon" / "icon256.png"
+    icon_path = _get_icon_path()
     if icon_path.exists():
-        from PySide6.QtGui import QIcon
         app.setWindowIcon(QIcon(str(icon_path)))
 
     window = MainWindow(reset_default=reset_default)
